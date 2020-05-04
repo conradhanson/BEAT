@@ -1,6 +1,4 @@
-import csv
 import json
-import pickle
 import re
 from time import sleep
 
@@ -22,7 +20,7 @@ from errors import custom_errors
 
 
 class Crawler:
-    def __init__(self, headless=True):
+    def __init__(self, width=2560, height=1600, headless=True):
         """
         Crawl Google Maps for business info
 
@@ -32,14 +30,15 @@ class Crawler:
         with open(path_css_selectors, 'r') as f:
             self.css_selectors = json.load(f)
 
-        self.browser = browser.get_firefox(headless=headless)
+        self.browser = browser.get_firefox(width=width, height=height)
+        # self.browser = browser.get_chrome(width=width, height=height, headless=headless)
         self.page_count = 0
 
     def quit(self):
         if self.browser:
             self.browser.quit()
 
-    def search_maps(self, city: str, state_code: str, subject: str, save_file: str):
+    def search_maps(self, city: str, state_code: str, subject: str):
         """
         Search maps for 'subject' in 'city', 'state_code'.
         Save results to table.
@@ -52,6 +51,8 @@ class Crawler:
             subject: str
                 to search for
         """
+        businesses = []
+
         if len(state_code) != 2:
             raise custom_errors.StateCodeFormattingError(state_code=state_code,
                                                          message='State code must be two uppercase characters.')
@@ -113,16 +114,9 @@ class Crawler:
                             results = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
                             if results:
                                 self.page_count += 1
-
-                                # PICKLE RESULTS
-                                businesses = self.iterate_businesses(city=city,
-                                                                     state_code=state_code,
-                                                                     businesses=results)
-                                if businesses:
-                                    with open(save_file, 'a') as f:
-                                        wr = csv.writer(f)
-                                        wr.writerow(businesses)
-
+                                businesses += self.iterate_businesses(city=city,
+                                                                      state_code=state_code,
+                                                                      businesses=results)
                                 if self.page_count >= 25:
                                     sleep(60 * 60 * 4)  # SLEEP FOR 4 HRS AFTER COLLECTING 25 PAGES OF RESULTS
                                     self.page_count = 0
@@ -141,6 +135,7 @@ class Crawler:
                                 except (NoSuchElementException, ElementClickInterceptedException,
                                         ElementNotInteractableException):
                                     break
+        return businesses
 
     def iterate_businesses(self, city: str, state_code: str, businesses: [webelement, ...]):
         """
@@ -249,6 +244,7 @@ class Crawler:
                     name = i.strip()
                 else:
                     name = name + ' - ' + i.strip()
+                    name.encode('utf8')
             contact_info = self.browser.find_elements_by_css_selector("span.widget-pane-link")
         except NoSuchElementException:
             print("** business_info() FAILED **")
@@ -261,9 +257,11 @@ class Crawler:
                 attr = e.get_property('innerText')
                 if not url and '.com' in attr:
                     url = attr.strip()
+                    url.encode('utf8')
                 if not phone:
                     phone = re.search(r"^\(\d\d\d\) \d\d\d-\d\d\d\d", attr)
                     if phone:
                         phone = phone[0].strip()
+                        phone.encode('utf8')
 
             return name, url, phone

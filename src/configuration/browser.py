@@ -10,11 +10,15 @@ from definitions import path_log_chrome
 from definitions import path_log_firefox
 
 
-def get_chrome(headless=True):
+def get_chrome(width=2560, height=1600, headless=True):
     """
     Define Chrome-specific options and return Chrome WebDriver instance
 
     Args:
+        width: int
+            of window
+        height: int
+            of window
         headless: bool
 
     Returns: WebDriver
@@ -25,33 +29,38 @@ def get_chrome(headless=True):
     chrome_options.add_argument("disable-infobars")  # DISABLING INFO BARS
     chrome_options.add_argument("--disable-extensions")  # DISABLING EXTENSIONS
     chrome_options.add_argument("--disable-dev-shm-usage")  # OVERCOME LIMITED RESOURCE PROBLEMS
-    chrome_options.headless(headless)
+    if headless:
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument(f'window-size={width}x{height}')
 
     browser = webdriver.Chrome(chrome_options=chrome_options,
                                executable_path=path_chromedriver,
                                service_args=["--verbose", f"--log-path={path_log_chrome}"])
-    browser.set_window_size(width=2560, height=1600)
+    browser.set_window_size(width, height)
 
     return browser
 
 
-def get_firefox(headless=True):
+def get_firefox(width=2560, height=1600):
     """
     Define Firefox-specific options and return Firefox WebDriver instance
+
     Args:
-        headless: bool
+        width: int
+            of window
+        height: int
+            of window
 
     Returns: WebDriver
         Firefox browser
     """
     cap = copy(DesiredCapabilities).FIREFOX
-    cap["marionette"] = headless
 
     browser = webdriver.Firefox(capabilities=cap,
                                 firefox_binary=path_firefox_binary,
                                 executable_path=path_geckodriver,
                                 service_log_path=path_log_firefox,
                                 timeout=15)
-    browser.set_window_size(width=2560, height=1600)
+    browser.set_window_size(width, height)
 
     return browser
