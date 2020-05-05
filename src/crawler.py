@@ -15,8 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 # MODULE
 from configuration import browser
 from definitions import path_css_selectors
-from definitions import path_errors
-from errors import custom_errors
+from definitions import path_save_errors
+import custom_errors
 
 
 class Crawler:
@@ -68,7 +68,7 @@ class Crawler:
             search_button.click()
         except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException) as e:
             self.browser.save_screenshot(
-                path_errors + f"{city}, {state_code} search_maps search_box_button failure.png")
+                path_save_errors + f"{city}, {state_code} search_maps search_box_button failure.png")
             print(e, "** SEARCH BOX / BUTTON failed, resetting map **")
             self.browser.get("https://www.google.com/maps")
             sleep(8)
@@ -81,7 +81,7 @@ class Crawler:
                     .until(expected_conditions
                            .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['CLEAR SEARCH'])))
             except TimeoutException as e:
-                self.browser.save_screenshot(path_errors + f"{city}, {state_code} search_maps city WIDGET & MAP "
+                self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} search_maps city WIDGET & MAP "
                                                            f"CLEAR_SEARCH timeout.png")
                 print(e, "** WIDGET & MAP / CLEAR SEARCH timeout, resetting map **")
                 self.browser.get("https://www.google.com/maps")
@@ -95,7 +95,7 @@ class Crawler:
                         .until(expected_conditions
                                .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['WIDGET & MAP'])))
                 except TimeoutException as e:
-                    self.browser.save_screenshot(path_errors + f"{city}, {state_code} search_maps subject WIDGET & MAP "
+                    self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} search_maps subject WIDGET & MAP "
                                                                f"timeout.png")
                     print(e, "** WIDGET & MAP timeout, resetting map **")
                     self.browser.get("https://www.google.com/maps")
@@ -107,7 +107,7 @@ class Crawler:
                                    .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['RESULTS'])))
                     except TimeoutException:
                         self.browser.save_screenshot(
-                            path_errors + f"{city}, {state_code} search_maps RESULTS timeout.png")
+                            path_save_errors + f"{city}, {state_code} search_maps RESULTS timeout.png")
                         print(f'** RESULTS timeout for {city}, {state_code} **')
                     else:
                         while 1:  # RESET results VARIABLE BC OF ELEMENT STALENESS
@@ -170,7 +170,7 @@ class Crawler:
                     biz.click()
                     sleep(2)
                 except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
-                    self.browser.save_screenshot(path_errors + f"{city}, {state_code} iterate_businesses biz_click.png")
+                    self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses biz_click.png")
                     print('** iterate_businesses() biz.click() failed **')
                     continue
                 else:
@@ -181,14 +181,14 @@ class Crawler:
                                                                  self.css_selectors['BUSINESS IMAGE'])))
                     except TimeoutException:  # HANDLE BIZ IMAGE LOADING TIMEOUT
                         self.browser.save_screenshot(
-                            path_errors + f"{city}, {state_code}_iterate_businesses bizimg.png")
+                            path_save_errors + f"{city}, {state_code}_iterate_businesses bizimg.png")
                         print('** BUSINESS IMAGE timed out **')
                         try:  # TO CLICK BACK BUTTON AFTER TIMEOUT ERROR
                             self.browser.find_element_by_css_selector(self.css_selectors['BACK TO RESULTS']).click()
                             sleep(3)
                         except (ElementClickInterceptedException, ElementNotInteractableException,
                                 NoSuchElementException):
-                            self.browser.save_screenshot(path_errors + f"{city}, {state_code} iterate_businesses "
+                            self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                        f"back_button_click after biz img timeout.png")
                             print('** BACK TO RESULTS failed after BIZ IMAGE timeout **')
                             break
@@ -207,7 +207,7 @@ class Crawler:
                         sleep(3)
                     except (NoSuchElementException, ElementNotInteractableException,
                             ElementClickInterceptedException) as e:
-                        self.browser.save_screenshot(path_errors + f"{city}, {state_code} iterate_businesses "
+                        self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                    f"back_button_click.png")
                         print(e, '** BACK TO RESULTS failed after gathering biz info **')
                         break
@@ -218,7 +218,7 @@ class Crawler:
                                        .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['RESULTS'])))
                             businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
                         except TimeoutException:
-                            self.browser.save_screenshot(path_errors + f"{city}, {state_code} iterate_businesses "
+                            self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                        f"RELOAD RESULTS timeout.png")
                             print('** RESULTS REFRESH timed-out **')
                             break
