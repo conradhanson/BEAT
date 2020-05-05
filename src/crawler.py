@@ -13,9 +13,10 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 # MODULE
-from configuration import browser
+import browser
 from definitions import path_css_selectors
 from definitions import path_save_errors
+from definitions import default_timeout
 import custom_errors
 
 
@@ -74,10 +75,10 @@ class Crawler:
             sleep(8)
         else:
             try:  # TO WAIT TILL PAGE IS FULLY LOADED
-                WebDriverWait(driver=self.browser, timeout=15) \
+                WebDriverWait(driver=self.browser, timeout=default_timeout) \
                     .until(expected_conditions
                            .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['WIDGET & MAP'])))
-                WebDriverWait(driver=self.browser, timeout=15) \
+                WebDriverWait(driver=self.browser, timeout=default_timeout) \
                     .until(expected_conditions
                            .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['CLEAR SEARCH'])))
             except TimeoutException as e:
@@ -91,7 +92,7 @@ class Crawler:
                 search_box.send_keys(subject + ' near ' + city + ' ' + state_code)
                 search_button.click()
                 try:  # TO WAIT FOR MAP TO FULLY LOAD
-                    WebDriverWait(driver=self.browser, timeout=15) \
+                    WebDriverWait(driver=self.browser, timeout=default_timeout) \
                         .until(expected_conditions
                                .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['WIDGET & MAP'])))
                 except TimeoutException as e:
@@ -102,7 +103,7 @@ class Crawler:
                     sleep(8)
                 else:
                     try:  # TO WAIT FOR RESULTS TO FULLY LOAD
-                        WebDriverWait(driver=self.browser, timeout=15) \
+                        WebDriverWait(driver=self.browser, timeout=default_timeout) \
                             .until(expected_conditions
                                    .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['RESULTS'])))
                     except TimeoutException:
@@ -175,7 +176,7 @@ class Crawler:
                     continue
                 else:
                     try:  # TO WAIT TILL BIZ PAGE IS FULLY LOADED
-                        WebDriverWait(driver=self.browser, timeout=30) \
+                        WebDriverWait(driver=self.browser, timeout=default_timeout) \
                             .until(expected_conditions
                                    .presence_of_element_located((By.CSS_SELECTOR,
                                                                  self.css_selectors['BUSINESS IMAGE'])))
@@ -213,7 +214,7 @@ class Crawler:
                         break
                     else:
                         try:  # TO RELOAD RESULTS LIST BC OF STALENESS
-                            WebDriverWait(driver=self.browser, timeout=30) \
+                            WebDriverWait(driver=self.browser, timeout=default_timeout) \
                                 .until(expected_conditions
                                        .presence_of_element_located((By.CSS_SELECTOR, self.css_selectors['RESULTS'])))
                             businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])

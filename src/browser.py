@@ -3,8 +3,8 @@ from copy import copy
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 
-from definitions import path_chromedriver
-from definitions import path_geckodriver
+from definitions import path_driver_firefox
+from definitions import path_driver_chrome
 from definitions import path_firefox_binary
 from definitions import path_log_chrome
 from definitions import path_log_firefox
@@ -34,9 +34,10 @@ def get_chrome(width=2560, height=1600, headless=True):
         chrome_options.add_argument(f'window-size={width}x{height}')
 
     browser = webdriver.Chrome(chrome_options=chrome_options,
-                               executable_path=path_chromedriver,
+                               executable_path=path_driver_chrome,
                                service_args=["--verbose", f"--log-path={path_log_chrome}"])
     browser.set_window_size(width, height)
+    browser.implicitly_wait(30)
 
     return browser
 
@@ -58,9 +59,10 @@ def get_firefox(width=2560, height=1600):
 
     browser = webdriver.Firefox(capabilities=cap,
                                 firefox_binary=path_firefox_binary,
-                                executable_path=path_geckodriver,
+                                executable_path=path_driver_firefox,
                                 service_log_path=path_log_firefox,
                                 timeout=15)
     browser.set_window_size(width, height)
+    browser.implicitly_wait(30)
 
     return browser
