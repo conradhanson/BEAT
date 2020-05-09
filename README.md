@@ -2,8 +2,12 @@
 
 Home to the **B**usiness **E**xtraction through **A**utomation **T**ool.
 
-- Using Selenium, Crawls G Maps and collects business info based on city, state and subject searched
-- Stores business information of run in a CSV
+- Using Selenium and pyvirtualdisplay, BEAT:
+  - crawls G Maps
+  - collects business info based on city, state, subject searched
+  - does so headless using XVFB
+- Stores business information from each city in a CSV
+- Runs in a Docker container for portability and dependency management
 
 ## Docker
 
@@ -17,6 +21,6 @@ Home to the **B**usiness **E**xtraction through **A**utomation **T**ool.
 ### Run
 
     docker run --shm-size=2g \
-                -v $PWD/results:/src/results/ \
-                --name BEAT_container
-                BEAT:latest
+                -v $PWD/results:/results/ \
+                --name BEAT_container \
+                beat:latest '2 letter state_code' 'subject'

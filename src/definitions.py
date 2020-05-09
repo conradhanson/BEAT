@@ -12,10 +12,11 @@ path_css_selectors = ROOT_DIR + '/css_selectors.json'
 path_app_properties = ROOT_DIR + '/application.properties'
 path_cities = ROOT_DIR + '/cities.csv'
 
-# SAVE PATHS
-path_log_chrome = ROOT_DIR + '/results/chrome_log'
-path_log_firefox = ROOT_DIR + '/results/firefox_log'
-path_save_errors = ROOT_DIR + '/results/errors/'
+# ROOT_SAVE_DIR = os.path.abspath('../') + '/results'  # LOCAL SAVE PATH
+ROOT_SAVE_DIR = '/results'  # CONTAINER SAVE PATH
+path_log_chrome = ROOT_SAVE_DIR + '/chrome_log'
+path_log_firefox = ROOT_SAVE_DIR + '/firefox_log'
+path_save_errors = ROOT_SAVE_DIR + '/errors/'
 
 # TIMEOUT DEFAULT
 default_timeout = 60  # in seconds

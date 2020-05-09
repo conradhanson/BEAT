@@ -21,18 +21,13 @@ import custom_errors
 
 
 class Crawler:
-    def __init__(self, width=2560, height=1600, headless=True):
-        """
-        Crawl Google Maps for business info
-
-        Args:
-            headless: bool
-        """
+    def __init__(self, width=2560, height=1600):
+        """ Crawl Google Maps for business info """
         with open(path_css_selectors, 'r') as f:
             self.css_selectors = json.load(f)
 
         self.browser = browser.get_firefox(width=width, height=height)
-        # self.browser = browser.get_chrome(width=width, height=height, headless=headless)
+        # self.browser = browser.get_chrome(width=width, height=height)
         self.page_count = 0
 
     def quit(self):

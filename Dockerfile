@@ -13,7 +13,8 @@ RUN apt-get -y update && \
     curl \
     python3 python3-pip python3-setuptools \
     xvfb \
-    vnc4server
+    vnc4server \
+    dbus-x11
 
 # install geckodriver
 RUN GECKODRIVER_VERSION=`curl https://github.com/mozilla/geckodriver/releases/latest | grep -Po 'v[0-9]+.[0-9]+.[0-9]+'` && \
@@ -22,8 +23,8 @@ RUN GECKODRIVER_VERSION=`curl https://github.com/mozilla/geckodriver/releases/la
     chmod +x /usr/local/bin/geckodriver && \
     rm geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz
 
-COPY src/ src/
-WORKDIR /src
+COPY src/ BEAT/src/
+WORKDIR /BEAT/src/
 RUN pip3 install -r ./requirements.txt
 RUN chmod a+x ./start.sh
-ENTRYPOINT ["/bin/bash", "-c", "/src/start.sh"]
+ENTRYPOINT ["./start.sh"]
