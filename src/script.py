@@ -3,12 +3,15 @@ LEAD GENERATION SCRIPT
 """
 import argparse
 import csv
+import logging
 from time import time, sleep
+
 from pyvirtualdisplay import Display
 
 from crawler import Crawler
 from definitions import ROOT_SAVE_DIR
 from definitions import path_cities
+from definitions import path_log
 
 
 def script(state_code: str, subject: str):
@@ -16,7 +19,7 @@ def script(state_code: str, subject: str):
     window_size = (2560, 1600)
     display = Display(visible=False, size=window_size, backend='xvfb')
     display.start()
-    print('-> Starting Crawler')
+    logging.info('Starting Crawler')
     crawler = Crawler(width=window_size[0], height=window_size[1])
     crawler.state_code = state_code
 
@@ -30,7 +33,7 @@ def script(state_code: str, subject: str):
         cities = sorted(list(set(cities)))
 
     for city in cities:
-        print(f'-> Searching {city}, {state_code}')
+        logging.info(f'Searching {city}, {state_code}')
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
         businesses = crawler.search_maps(city, state_code, subject)
         if businesses:
@@ -45,10 +48,20 @@ def script(state_code: str, subject: str):
     crawler.quit()
     finished = time()
     display.stop()
-    print((finished - started) / 3600)
+    logging.info(f"Completed in {(finished - started) / 3600} hours.")
 
 
 if __name__ == '__main__':
+    # LOGGING CONFIGURATION
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p'
+    )
+    logging.root.addHandler(logging.FileHandler(path_log, mode='w'))
+    logging.root.addHandler(logging.StreamHandler())
+    logging.getLogger("easyprocess").setLevel(logging.INFO)
+
     parser = argparse.ArgumentParser()
     # POSITIONAL ARGS
     parser.add_argument('subject', type=str,
@@ -57,14 +70,14 @@ if __name__ == '__main__':
                         help='the two letter state abbreviation for where you want to search the subject')
     args = parser.parse_args()
     subject = args.subject.strip()
-    state_code = args.state_code.strip()
+    state_code = args.state_code.strip().upper()
 
     if len(state_code) != 2:
-        print('State Code is invalid. Must be two letters.')
+        logging.error('State Code is invalid. Must be two letters.')
     elif not isinstance(state_code, str):
-        print('State Code is invalid. Must be a string.')
+        logging.error('State Code is invalid. Must be a string.')
     elif not isinstance(subject, str):
-        print('Subject is invalid. Must be a string.')
+        logging.error('Subject is invalid. Must be a string.')
     else:
         script(subject=args.subject, state_code=args.state_code)
 
