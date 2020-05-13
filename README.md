@@ -20,7 +20,8 @@ Home to the **B**usiness **E**xtraction through **A**utomation **T**ool.
 
 ### Run
 
-    docker run --shm-size=2g \
-                -v $PWD/results:/results/ \
-                --name BEAT_container \
-                beat:latest '2 letter state_code' 'subject'
+    docker run --rm \
+               --shm-size=2g \
+               -v $PWD/results:/results/ \
+               --name BEAT_container \
+               beat:latest 'subject' 'state_code'

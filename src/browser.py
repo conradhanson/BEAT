@@ -10,6 +10,7 @@ from definitions import path_driver_firefox
 from definitions import path_firefox_binary
 from definitions import path_log_chrome
 from definitions import path_log_firefox
+from definitions import path_save_errors
 
 
 def get_chrome(width=2560, height=1600, headless=True):
@@ -72,9 +73,10 @@ def get_firefox(width=2560, height=1600):
 
 
 def init_firefox_log():
-    # Make Results Dir
+    # Make results and errors Dir
     if not Path(ROOT_SAVE_DIR).exists():
         Path(ROOT_SAVE_DIR).mkdir()
+        Path(path_save_errors).mkdir()
     # Create / Clear Firefox Log
     if not Path(path_log_firefox).exists():
         with open(path_log_firefox, 'x') as f:
@@ -85,9 +87,10 @@ def init_firefox_log():
 
 
 def init_chrome_log():
-    # Make Results Dir
+    # Make results and errors Dir
     if not Path(ROOT_SAVE_DIR).exists():
         Path(ROOT_SAVE_DIR).mkdir()
+        Path(path_save_errors).mkdir()
     # Create / Clear Chrome Log
     if not Path(path_log_chrome).exists():
         with open(path_log_chrome, 'x') as f:

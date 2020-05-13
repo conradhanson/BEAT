@@ -18,6 +18,7 @@ def script(state_code: str, subject: str):
     started = time()
     window_size = (2560, 1600)
     display = Display(visible=False, size=window_size, backend='xvfb')
+    display.display = 99
     display.start()
     logging.info('Starting Crawler')
     crawler = Crawler(width=window_size[0], height=window_size[1])
@@ -37,6 +38,7 @@ def script(state_code: str, subject: str):
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
         businesses = crawler.search_maps(city, state_code, subject)
         if businesses:
+            logging.info(f'Found {len(businesses)} contacts')
             with open(path_save_file, 'a', encoding='utf-8') as f:
                 wr = csv.writer(f)
                 wr.writerows(businesses)
@@ -54,13 +56,12 @@ def script(state_code: str, subject: str):
 if __name__ == '__main__':
     # LOGGING CONFIGURATION
     logging.basicConfig(
-        level=logging.WARNING,
+        level=logging.INFO,
         format='%(asctime)s %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
     logging.root.addHandler(logging.FileHandler(path_log, mode='w'))
-    logging.root.addHandler(logging.StreamHandler())
-    logging.getLogger("easyprocess").setLevel(logging.INFO)
+    logging.getLogger("easyprocess").setLevel(logging.WARNING)
 
     parser = argparse.ArgumentParser()
     # POSITIONAL ARGS
@@ -73,6 +74,7 @@ if __name__ == '__main__':
     state_code = args.state_code.strip().upper()
 
     if len(state_code) != 2:
+        print(f"\"{state_code}\"")
         logging.error('State Code is invalid. Must be two letters.')
     elif not isinstance(state_code, str):
         logging.error('State Code is invalid. Must be a string.')

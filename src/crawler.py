@@ -59,7 +59,7 @@ class Crawler:
         except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException) as e:
             self.browser.save_screenshot(
                 path_save_errors + f"{city}, {state_code} search_maps search_box_button failure.png")
-            logging.warning(e, "** SEARCH BOX / BUTTON failed, resetting map **")
+            logging.error("SEARCH BOX / BUTTON failed", exc_info=True)
             self.browser.get("https://www.google.com/maps")
             sleep(8)
         else:
@@ -73,7 +73,7 @@ class Crawler:
             except TimeoutException as e:
                 self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} search_maps city WIDGET & MAP "
                                                            f"CLEAR_SEARCH timeout.png")
-                logging.warning(e, "** WIDGET & MAP / CLEAR SEARCH timeout, resetting map **")
+                logging.error("WIDGET & MAP / CLEAR SEARCH timeout", exc_info=False)
                 self.browser.get("https://www.google.com/maps")
                 sleep(8)
             else:  # CLEAR SEARCH BOX (APPEARS AFTER SEARCH BUTTON HAS BEEN PRESSED) & SEARCH SUBJECT
@@ -87,7 +87,7 @@ class Crawler:
                 except TimeoutException as e:
                     self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} search_maps subject WIDGET & MAP "
                                                                f"timeout.png")
-                    logging.warning(e, "** WIDGET & MAP timeout, resetting map **")
+                    logging.error("WIDGET & MAP timeout", exc_info=False)
                     self.browser.get("https://www.google.com/maps")
                     sleep(8)
                 else:
@@ -98,7 +98,7 @@ class Crawler:
                     except TimeoutException:
                         self.browser.save_screenshot(
                             path_save_errors + f"{city}, {state_code} search_maps RESULTS timeout.png")
-                        logging.warning(f'** RESULTS timeout for {city}, {state_code} **')
+                        logging.error('RESULTS timeout', exc_info=False)
                     else:
                         while 1:  # RESET results VARIABLE BC OF ELEMENT STALENESS
                             results = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
@@ -159,7 +159,7 @@ class Crawler:
                     sleep(2)
                 except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
                     self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses biz_click.png")
-                    logging.warning('** iterate_businesses() biz.click() failed **')
+                    logging.error('iterate_businesses -> biz.click() failed', exc_info=True)
                     continue
                 else:
                     try:  # TO WAIT TILL BIZ PAGE IS FULLY LOADED
@@ -170,7 +170,7 @@ class Crawler:
                     except TimeoutException:  # HANDLE BIZ IMAGE LOADING TIMEOUT
                         self.browser.save_screenshot(
                             path_save_errors + f"{city}, {state_code}_iterate_businesses bizimg.png")
-                        logging.warning('** BUSINESS IMAGE timed out **')
+                        logging.error('BUSINESS IMAGE timed out', exc_info=False)
                         try:  # TO CLICK BACK BUTTON AFTER TIMEOUT ERROR
                             self.browser.find_element_by_css_selector(self.css_selectors['BACK TO RESULTS']).click()
                             sleep(3)
@@ -178,11 +178,12 @@ class Crawler:
                                 NoSuchElementException):
                             self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                        f"back_button_click after biz img timeout.png")
-                            logging.warning('** BACK TO RESULTS failed after BIZ IMAGE timeout **')
+                            logging.error('BACK TO RESULTS failed after BIZ IMAGE timeout', exc_info=True)
                             break
 
-                    # COLLECT BIZ INFO & ADD TO RESULTS
-                    name, phone, url = self.business_info()
+                    # COLLECT BUSINESS INFO & ADD TO RESULTS
+                    name = self.get_name()
+                    url, phone = self.get_url_phone()
                     if name:
                         results.append((name, url, phone, city, state_code))
 
@@ -197,7 +198,7 @@ class Crawler:
                             ElementClickInterceptedException) as e:
                         self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                    f"back_button_click.png")
-                        logging.warning(e, '** BACK TO RESULTS failed after gathering biz info **')
+                        logging.error('BACK TO RESULTS failed after gathering biz info', exc_info=False)
                         break
                     else:
                         try:  # TO RELOAD RESULTS LIST BC OF STALENESS
@@ -208,23 +209,19 @@ class Crawler:
                         except TimeoutException:
                             self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate_businesses "
                                                                        f"RELOAD RESULTS timeout.png")
-                            logging.warning('** RESULTS REFRESH timed-out **')
+                            logging.error('RESULTS REFRESH timed-out')
                             break
-
-        logging.info(f'Found {len(results)} contacts')
         return results
 
-    def business_info(self):
-        """
-        Gather relevant info from business listing
-
-        :Returns:
-            basic contact info
-        """
+    def get_name(self):
+        """ grab a business's name """
+        name = None
         try:
-            name = ''
             name_list = self.browser.find_element_by_css_selector(
                 self.css_selectors['NAME']).get_property('innerText').split('-')
+        except NoSuchElementException:
+            logging.error("get_name()", exc_info=False)
+        else:
             if len(name_list) >= 2:
                 name_list.pop(-1)
             for i in name_list:
@@ -232,24 +229,29 @@ class Crawler:
                     name = i.strip()
                 else:
                     name = name + ' - ' + i.strip()
-                    name.encode('utf8')
+            name.encode('utf8')
+
+        return name
+
+    def get_url_phone(self):
+        """ grab a business's URL and Phone Number """
+        phone = None
+        url = None
+        try:
             contact_info = self.browser.find_elements_by_css_selector("span.widget-pane-link")
         except NoSuchElementException:
-            logging.warning("** business_info() FAILED **")
-            return None, None, None
+            logging.error("business_info() contact_info failed", exc_info=False)
         else:
             # FIND PHONE NUMBER & URL IF EXISTS
-            phone = None
-            url = None
             for e in contact_info:
                 attr = e.get_property('innerText')
                 if not url and '.com' in attr:
                     url = attr.strip()
-                    url.encode('utf8')
                 if not phone:
                     phone = re.search(r"^\(\d\d\d\) \d\d\d-\d\d\d\d", attr)
                     if phone:
                         phone = phone[0].strip()
-                        phone.encode('utf8')
+            url.encode('utf8')
+            phone.encode('utf8')
 
-            return name, url, phone
+        return url, phone
