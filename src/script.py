@@ -1,6 +1,4 @@
-"""
-LEAD GENERATION SCRIPT
-"""
+""" BUSINESS EXTRACTION THROUGH AUTOMATION TOOL SCRIPT """
 import argparse
 import csv
 import logging
@@ -36,7 +34,7 @@ def script(state_code: str, subject: str):
     for city in cities:
         logging.info(f'Searching {city}, {state_code}')
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
-        businesses = crawler.search_maps(city, state_code, subject)
+        businesses = crawler.search_subject(city, state_code, subject)
         if businesses:
             logging.info(f'Found {len(businesses)} contacts')
             with open(path_save_file, 'a', encoding='utf-8') as f:
@@ -82,5 +80,3 @@ if __name__ == '__main__':
         logging.error('Subject is invalid. Must be a string.')
     else:
         script(subject=args.subject, state_code=args.state_code)
-
-    # script(state_code='NC', subject='cafes')
