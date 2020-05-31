@@ -102,114 +102,11 @@ class Crawler:
 
         return True
 
-    def orient_map(self, location: str):
-        """
-        orient the map to the location ('city, state' or 'subject near city, state')
-
-        Args:
-            location: str
-                to orient map
-
-        Returns: boolean
-            if successful
-        """
-        try:  # TO FIND SEARCH BOX & BUTTON
-            search_box = self.browser.find_element_by_css_selector(self.css_selectors['SEARCH BOX'])
-            search_button = self.browser.find_element_by_css_selector(self.css_selectors['SEARCH BUTTON'])
-        except NoSuchElementException:
-            self.browser.save_screenshot(path_save_errors + f"orient_map no such element error.png")
-            logging.error("Failed to find search box/button", exc_info=False)
-            return False
-
-        try:  # TO SEARCH CITY TO ORIENT MAP
-            search_box.send_keys(location)
-            search_button.click()
-        except (ElementClickInterceptedException, ElementNotInteractableException):
-            self.browser.save_screenshot(path_save_errors + f"orient_map click error.png")
-            logging.error("Failed to click search button", exc_info=False)
-            return False
-        return True
-
-    def iterate_businesses(self, city, state_code, businesses):
-        biz_data = []
-        biz_count = len(businesses)
-        logging.info(f'{biz_count} businesses to iterate over')
-
-        for i in range(biz_count):
-            logging.info(f'processing {i+1}-th business')
-            try:
-                biz = businesses.pop(i)
-            except IndexError:
-                logging.error(f'Failed to pop the {i}-th index of business list')
-                break
-
-            if not biz.is_displayed():
-                biz.location_once_scrolled_into_view
-
-            if self.is_ad(biz):
-                continue
-
-            # TODO this waiting for biz to be enabled doesn't work. biz is enabled but not clickable. check for clickable state instead.
-            try:  # TO CLICK THE BUSINESS LISTING
-                biz.click()
-            except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
-                self.browser.save_screenshot(path_save_errors + f"iterate_businesses biz_click.png")
-                logging.error('iterate_businesses -> biz.click() failed', exc_info=False)
-                continue
-
-            img_loaded = self.wait_for('BUSINESS IMAGE')
-
-            # TODO : CREATE LOGIC FOR HANDLING A BUSINESS IMAGE LOADING DELAY / FAIL
-            if not img_loaded:  # GO BACK TO RESULTS
-                logging.error('BUSINESS IMAGE timed out', exc_info=False)
-                self.go_back_to_results(count=10)
-
-            # COLLECT BUSINESS INFO & ADD TO RESULTS
-            name = self.get_name()
-            url, phone = self.get_url_phone()
-            if name:
-                biz_data.append((name, url, phone, city, state_code))
-
-            # TODO handle going back to results in more resilient / simplistic manner. maybe wrap in function?
-            # GO BACK TO THE RESULTS PAGE
-            successful_go_back = self.go_back_to_results(count=10)
-            retry_count = 0
-            while not successful_go_back:
-                retry_count += 1
-                if retry_count > 5:
-                    break
-                logging.info(f'{retry_count}-th time trying to go back to results')
-                successful_go_back = self.go_back_to_results(count=10)
-
-            if successful_go_back:
-                # WAIT FOR THE RESULTS PAGE TO LOAD
-                results_loaded = self.wait_for('RESULTS')
-                retry_count = 0
-                while not results_loaded:
-                    retry_count += 1
-                    if retry_count > 5:
-                        break
-                    logging.info(f'{retry_count}-th time waiting for results to load')
-                    results_loaded = self.wait_for('RESULTS')
-
-                if not results_loaded:
-                    logging.error('RESULTS loading timeout')
-                    self.browser.save_screenshot(path_save_errors +
-                                                 f"{city}, {state_code} iterate_businesses RELOAD RESULTS timeout.png")
-                    break
-            else:
-                logging.error('Unsuccessful go back to results')
-                self.browser.save_screenshot(path_save_errors +
-                                             f"{city}, {state_code} iterate_businesses RELOAD RESULTS timeout.png")
-                break
-
-            # REFRESH STALE BUSINESS LIST
-            businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
-        return biz_data
-
     def go_back_to_results(self, count: int):
         """
-        go back to the results page, try to click element for count times.
+        Go back to the results page, try to click element for count times.
+        If the button doesn't exist, then assume current state is on results page.
+
         Args:
             count: int
                 number of times to try to click element
@@ -219,13 +116,21 @@ class Crawler:
         key = 'BACK TO RESULTS'
         current_url = self.browser.current_url
 
+        # FIND THE ELEMENT
+        try:
+            element = self.browser.find_element_by_css_selector(self.css_selectors[key])
+        except NoSuchElementException:
+            logging.error("Couldn't find button when trying to go back to results")
+            return True
+
+        # ATTEMPT TO CLICK ELEMENT COUNT TIMES, COMPARING BEFORE AND AFTER URLs TO DETERMINE IF SUCCESSFUL
         for i in range(0, count):
             clickable = self.can_click(key)
             if clickable:
                 try:
-                    self.browser.find_element_by_css_selector(self.css_selectors[key]).click()
-                except (NoSuchElementException, ElementClickInterceptedException, ElementNotInteractableException):
-                    continue
+                    element.click()
+                except (ElementClickInterceptedException, ElementNotInteractableException):
+                    pass
 
                 sleep(5)
                 if current_url != self.browser.current_url:
@@ -295,6 +200,125 @@ class Crawler:
 
         return url, phone
 
+    def orient_map(self, location: str):
+        """
+        orient the map to the location ('city, state' or 'subject near city, state')
+
+        Args:
+            location: str
+                to orient map
+
+        Returns: boolean
+            if successful
+        """
+        try:  # TO FIND SEARCH BOX & BUTTON
+            search_box = self.browser.find_element_by_css_selector(self.css_selectors['SEARCH BOX'])
+            search_button = self.browser.find_element_by_css_selector(self.css_selectors['SEARCH BUTTON'])
+        except NoSuchElementException:
+            self.browser.save_screenshot(path_save_errors + f"orient_map no such element error.png")
+            logging.error("Failed to find search box/button", exc_info=False)
+            return False
+
+        try:  # TO SEARCH CITY TO ORIENT MAP
+            search_box.send_keys(location)
+            search_button.click()
+        except (ElementClickInterceptedException, ElementNotInteractableException):
+            self.browser.save_screenshot(path_save_errors + f"orient_map click error.png")
+            logging.error("Failed to click search button", exc_info=False)
+            return False
+        return True
+
+    def iterate_businesses(self, city, state_code, businesses):
+        """
+        Find the name, URL, phone number, city, state of each business in the businesses list.
+
+        Args:
+            city: str
+                that businesses are in
+            state_code: str
+                that businesses are in
+            businesses: [WebElement, ...]
+
+        Returns: a list of tuples for each business processed.
+            (name, URL, phone number, city, state)
+        """
+        biz_data = []
+
+        for i in range(len(businesses)):
+            logging.info(f'processing {i+1}-th business')
+            try:
+                biz = businesses.pop(i)
+            except IndexError:
+                logging.error(f'Failed to pop the {i}-th index of business list')
+                break
+
+            if not biz.is_displayed():
+                biz.location_once_scrolled_into_view
+
+            if self.is_ad(biz):
+                continue
+
+            # TODO this waiting for biz to be enabled doesn't work. biz is enabled but not clickable. check for clickable state instead.
+            try:  # TO CLICK THE BUSINESS LISTING
+                biz.click()
+            except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
+                self.browser.save_screenshot(path_save_errors + f"iterate_businesses biz_click.png")
+                logging.error('iterate_businesses -> biz.click() failed', exc_info=False)
+                continue
+
+            # VERIFY BUSINESS LISTING'S IMAGE HAS LOADED
+            img_loaded = self.wait_for('BUSINESS IMAGE')
+            retry_count = 0
+            while not img_loaded:
+                retry_count += 1
+                if retry_count > 5:
+                    break
+                logging.info(f'{retry_count}-th time waiting for BUSINESS IMAGE to load')
+                img_loaded = self.wait_for('BUSINESS IMAGE')
+
+            # COLLECT BUSINESS INFO & ADD TO RESULTS
+            name = self.get_name()
+            url, phone = self.get_url_phone()
+            if name:
+                biz_data.append((name, url, phone, city, state_code))
+
+            # TODO handle going back to results in more resilient / simplistic manner. maybe wrap in function?
+            # GO BACK TO THE RESULTS PAGE
+            successful_go_back = self.go_back_to_results(count=10)
+            retry_count = 0
+            while not successful_go_back:
+                retry_count += 1
+                if retry_count > 5:
+                    break
+                logging.info(f'{retry_count}-th time trying to go back to results')
+                successful_go_back = self.go_back_to_results(count=10)
+
+            if successful_go_back:
+                # WAIT FOR THE RESULTS PAGE TO LOAD
+                results_loaded = self.wait_for('RESULTS')
+                retry_count = 0
+                while not results_loaded:
+                    retry_count += 1
+                    if retry_count > 5:
+                        break
+                    logging.info(f'{retry_count}-th time waiting for results to load')
+                    results_loaded = self.wait_for('RESULTS')
+
+                if not results_loaded:
+                    logging.error('RESULTS loading timeout')
+                    self.browser.save_screenshot(path_save_errors +
+                                                 f"{city}, {state_code} iterate_businesses RELOAD RESULTS timeout.png")
+                    break
+            else:
+                logging.error('Unsuccessful go back to results')
+                self.browser.save_screenshot(path_save_errors +
+                                             f"{city}, {state_code} iterate_businesses RELOAD RESULTS timeout.png")
+                break
+
+            # REFRESH STALE BUSINESS LIST
+            businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
+        return biz_data
+
     def search_subject(self, city: str, state_code: str, subject: str, page_limit: int = 25, sleep_time: int = 60*60*4):
         """
         Search maps for 'subject' in 'city', 'state_code'.
@@ -330,6 +354,7 @@ class Crawler:
 
             while results:
                 page_count += 1
+                logging.info(f'{len(results)} businesses to iterate over')
                 businesses += self.iterate_businesses(city=city, state_code=state_code, businesses=results)
 
                 if page_count >= page_limit:
