@@ -2,21 +2,25 @@
 import argparse
 import csv
 import logging
-from time import time, sleep
+from time import time
+from time import sleep
 
 from pyvirtualdisplay import Display
 
 from crawler import Crawler
-from definitions import ROOT_SAVE_DIR
+from definitions import ROOT_SAVE_DIR, path_save_errors, max_timeout
 from definitions import path_cities
 from definitions import path_log
 
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import WebDriverException
+
 
 def script(state_code: str, subject: str):
+    # initialize virtual display, settings, and crawler
     started = time()
-    window_size = (2560, 1600)
+    window_size = (1920, 1080)
     display = Display(visible=False, size=window_size, backend='xvfb')
-    display.display = 99
     display.start()
     logging.info('Starting Crawler')
     crawler = Crawler(width=window_size[0], height=window_size[1])
@@ -31,20 +35,27 @@ def script(state_code: str, subject: str):
                 cities.append(city)
         cities = sorted(list(set(cities)))
 
+    # search each city of the state for the subject
     for city in cities:
         logging.info(f'Searching {city}, {state_code}')
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
-        businesses = crawler.search_subject(city, state_code, subject)
+        businesses = []
+
+        try:
+            businesses = crawler.search_subject(city, state_code, subject, page_limit=25, sleep_time=max_timeout)
+        except (StaleElementReferenceException, WebDriverException):
+            crawler.browser.save_screenshot(path_save_errors + f"{city}, {state_code} failure.png")
+            logging.error(f'failed crawling {city}. stale element error. '
+                          f'Precautionary sleep for {max_timeout / 3600} hrs.')
+            sleep(max_timeout)
+
         if businesses:
             logging.info(f'Found {len(businesses)} contacts')
             with open(path_save_file, 'a', encoding='utf-8') as f:
                 wr = csv.writer(f)
                 wr.writerows(businesses)
 
-        if crawler.page_count >= 25:
-            sleep(60 * 60 * 4)  # SLEEP FOR 4 HRS AFTER COLLECTING 25 PAGES OF RESULTS
-            crawler.page_count = 0
-
+    # cleanup
     crawler.quit()
     finished = time()
     display.stop()

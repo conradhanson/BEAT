@@ -19,5 +19,6 @@ path_log_firefox = ROOT_SAVE_DIR + '/firefox.log'
 path_save_errors = ROOT_SAVE_DIR + '/errors/'
 path_log = ROOT_SAVE_DIR + '/run.log'
 
-# TIMEOUT DEFAULT
-default_timeout = 60  # in seconds
+# TIMEOUT DEFAULT (IN SECONDS)
+default_timeout = 60
+max_timeout = 60 * 60 * 4

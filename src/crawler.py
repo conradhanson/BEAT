@@ -7,7 +7,6 @@ from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.common.exceptions import ElementNotInteractableException
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions
@@ -18,6 +17,7 @@ import browser
 from definitions import path_css_selectors
 from definitions import path_save_errors
 from definitions import default_timeout
+from definitions import max_timeout
 
 
 class Crawler:
@@ -28,7 +28,7 @@ class Crawler:
 
         self.browser = browser.get_firefox(width=width, height=height)
         # self.browser = browser.get_chrome(width=width, height=height)
-        # self.page_count = 0
+        self.page_count = 0  # keep track of number pages that have been processed
 
     def quit(self):
         if self.browser:
@@ -249,7 +249,7 @@ class Crawler:
             try:
                 biz = businesses.pop(i)
             except IndexError:
-                logging.error(f'Failed to pop the {i}-th index of business list')
+                # logging.error(f'Failed to pop the {i}-th index of business list')
                 break
 
             if not biz.is_displayed():
@@ -259,6 +259,18 @@ class Crawler:
                 continue
 
             # TODO this waiting for biz to be enabled doesn't work. biz is enabled but not clickable. check for clickable state instead.
+            biz_enabled = biz.is_enabled()
+            retry_count = 0
+            while not biz_enabled:
+                retry_count += 1
+                if retry_count > 3:
+                    break
+                logging.info(f'{retry_count}-th time waiting for biz to be enabled.')
+                biz_enabled = biz.is_enabled()
+
+            if not biz_enabled:
+                continue
+
             try:  # TO CLICK THE BUSINESS LISTING
                 biz.click()
             except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
@@ -271,10 +283,13 @@ class Crawler:
             retry_count = 0
             while not img_loaded:
                 retry_count += 1
-                if retry_count > 5:
+                if retry_count > 3:
                     break
                 logging.info(f'{retry_count}-th time waiting for BUSINESS IMAGE to load')
                 img_loaded = self.wait_for('BUSINESS IMAGE')
+
+            if not img_loaded:
+                continue
 
             # COLLECT BUSINESS INFO & ADD TO RESULTS
             name = self.get_name()
@@ -282,13 +297,13 @@ class Crawler:
             if name:
                 biz_data.append((name, url, phone, city, state_code))
 
-            # TODO handle going back to results in more resilient / simplistic manner. maybe wrap in function?
+            # TODO maybe wrap in function?
             # GO BACK TO THE RESULTS PAGE
             successful_go_back = self.go_back_to_results(count=10)
             retry_count = 0
             while not successful_go_back:
                 retry_count += 1
-                if retry_count > 5:
+                if retry_count > 3:
                     break
                 logging.info(f'{retry_count}-th time trying to go back to results')
                 successful_go_back = self.go_back_to_results(count=10)
@@ -299,7 +314,7 @@ class Crawler:
                 retry_count = 0
                 while not results_loaded:
                     retry_count += 1
-                    if retry_count > 5:
+                    if retry_count > 3:
                         break
                     logging.info(f'{retry_count}-th time waiting for results to load')
                     results_loaded = self.wait_for('RESULTS')
@@ -319,7 +334,8 @@ class Crawler:
             businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
         return biz_data
 
-    def search_subject(self, city: str, state_code: str, subject: str, page_limit: int = 25, sleep_time: int = 60*60*4):
+    def search_subject(self, city: str, state_code: str, subject: str,
+                       page_limit: int = 25, sleep_time: int = max_timeout):
         """
         Search maps for 'subject' in 'city', 'state_code'.
         Save results to table.
@@ -334,13 +350,12 @@ class Crawler:
             page_limit: int
                 of results processed before sleeping. Default is 25 pages of results.
             sleep_time: int
-                in seconds till continuing the results processing. Default is 4 hours.
+                in seconds till continuing the results processing.
 
         Returns: boolean
             if successful
         """
         businesses = []
-        page_count = 0
         self.browser.get("https://www.google.com/maps")
         self.orient_map(city + ' ' + state_code)
         self.wait_for('WIDGET & MAP')
@@ -353,13 +368,14 @@ class Crawler:
             results = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
 
             while results:
-                page_count += 1
-                logging.info(f'{len(results)} businesses to iterate over')
+                self.page_count += 1
+                # logging.info(f'{len(results)} businesses to iterate over')
                 businesses += self.iterate_businesses(city=city, state_code=state_code, businesses=results)
 
-                if page_count >= page_limit:
+                if self.page_count >= page_limit:
+                    logging.info(f"sleeping for {max_timeout / 3600} hrs")
                     sleep(sleep_time)  # SLEEP FOR X HRS AFTER COLLECTING X PAGES OF RESULTS
-                    page_count = 0
+                    self.page_count = 0
 
                 if self.next_page('NEXT RESULTS PAGE'):
                     if self.wait_for('RESULTS'):
