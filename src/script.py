@@ -75,7 +75,7 @@ if __name__ == '__main__':
         format='%(asctime)s %(message)s',
         datefmt='%m/%d/%Y %I:%M:%S %p'
     )
-    logging.root.addHandler(logging.FileHandler(path_log, mode='w'))
+    logging.root.addHandler(logging.FileHandler(path_log, mode='w', encoding='UTF-8'))
     logging.getLogger("easyprocess").setLevel(logging.WARNING)
 
     parser = argparse.ArgumentParser()
@@ -100,7 +100,6 @@ if __name__ == '__main__':
     else:
         if args.city:
             city = args.city.strip()
-            logging.info(city)
             if not isinstance(city, str):
                 logging.error('City is invalid. Must be a string.')
             else:

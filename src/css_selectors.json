@@ -11,7 +11,9 @@
     "WIDGET & MAP": "html body.keynav-mode-off.screen-mode jsl div#app-container.vasquette.pane-open-mode",
     "ADDRESS": "div.section-info:nth-child(11) > div:nth-child(1) > div:nth-child(1)",
     "URL": "div.section-info:nth-child(13) > div:nth-child(1) > div:nth-child(1) > span:nth-child(4) > span:nth-child(4)",
+    "NEW URL": ".ugiz4pqJLAG__underline_on_hover > div:nth-child(1)",
     "PHONE #": "div.section-info:nth-child(14) > div:nth-child(1) > div:nth-child(1) > span:nth-child(4) > span:nth-child(4)",
+    "NEW PHONE #": "div.ugiz4pqJLAG__root:nth-child(14) > button:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)",
     "WIDGET PANE": "html body.keynav-mode-off.screen-mode jsl div#app-container.vasquette.pane-open-mode div#content-container div#pane div.widget-pane.widget-pane-visible div.widget-pane-content.scrollable-y div.widget-pane-content-holder div.section-layout.section-layout-root",
     "AD": "html body.keynav-mode-off.screen-mode jsl div#app-container.vasquette.pane-open-mode div#content-container div#pane div.widget-pane.widget-pane-visible div.widget-pane-content.scrollable-y.scrollable-show div.widget-pane-content-holder div.section-layout.section-layout-root div.section-layout.section-scrollbox.scrollable-y.scrollable-show.section-layout-flex-vertical div.section-result div.section-result-content div.section-result-text-content div.section-result-header div.section-result-title-container h3.section-result-title button"
 }

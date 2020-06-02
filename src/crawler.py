@@ -161,10 +161,11 @@ class Crawler:
         """ grab a business's name """
         name = None
         try:
-            name_list = self.browser.find_element_by_css_selector(
-                self.css_selectors['NAME']).get_property('innerText').split('-')
+            name_list = self.browser.find_element_by_css_selector(self.css_selectors['NAME'])\
+                .get_property('innerText').split('-')
         except NoSuchElementException:
-            logging.error("get_name()", exc_info=False)
+            # logging.error("get_name failed to find element", exc_info=False)
+            pass
         else:
             if len(name_list) >= 2:
                 name_list.pop(-1)
@@ -173,32 +174,36 @@ class Crawler:
                     name = i.strip()
                 else:
                     name = name + ' - ' + i.strip()
-                    name.encode('utf8')
+                    # name.encode('utf8')
 
         return name
 
-    def get_url_phone(self):
-        """ grab a business's URL and Phone Number """
-        phone = None
+    def get_url(self):
+        """ grab a business's URL if it exists """
         url = None
         try:
-            contact_info = self.browser.find_elements_by_css_selector("span.widget-pane-link")
+            url = self.browser.find_element_by_css_selector(self.css_selectors["NEW URL"]).get_property('innerText')
         except NoSuchElementException:
-            logging.error("business_info() contact_info failed", exc_info=False)
+            # logging.error("get_url failed to find element", exc_info=False)
+            pass
         else:
-            # FIND PHONE NUMBER & URL IF EXISTS
-            for e in contact_info:
-                attr = e.get_property('innerText')
-                if not url and '.com' in attr:
-                    url = attr.strip()
-                    url.encode('utf8')
-                if not phone:
-                    phone = re.search(r"^\(\d\d\d\) \d\d\d-\d\d\d\d", attr)
-                    if phone:
-                        phone = phone[0].strip()
-                        phone.encode('utf8')
+            url = url.strip()
+        return url
 
-        return url, phone
+    def get_phone(self):
+        """ grab a business's phone number if it exists """
+        phone = None
+        try:
+            phone = self.browser.find_element_by_css_selector(self.css_selectors["NEW PHONE #"])\
+                .get_property('innerText')
+        except NoSuchElementException:
+            # logging.error("get_phone failed to find element", exc_info=False)
+            pass
+        else:
+            phone = re.search(r"^\(\d\d\d\) \d\d\d-\d\d\d\d", phone)
+            if phone:
+                phone = phone[0].strip()
+        return phone
 
     def orient_map(self, location: str):
         """
@@ -245,7 +250,6 @@ class Crawler:
         biz_data = []
 
         for i in range(len(businesses)):
-            logging.info(f'processing {i+1}-th business')
             try:
                 biz = businesses.pop(i)
             except IndexError:
@@ -291,11 +295,13 @@ class Crawler:
             if not img_loaded:
                 continue
 
-            # COLLECT BUSINESS INFO & ADD TO RESULTS
+            # COLLECT BUSINESS INFO & ADD TO RELEVANT RESULTS
             name = self.get_name()
-            url, phone = self.get_url_phone()
-            if name:
-                biz_data.append((name, url, phone, city, state_code))
+            url = self.get_url()
+            # phone = self.get_name()
+            logging.info(f"processing business {i}-th: name='{name}' url='{url}'")
+            if name and url:
+                biz_data.append((name, url, city, state_code))
 
             # TODO maybe wrap in function?
             # GO BACK TO THE RESULTS PAGE
