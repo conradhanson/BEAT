@@ -16,7 +16,7 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import WebDriverException
 
 
-def script(state_code: str, subject: str):
+def script(state_code: str, subject: str, start_city: str = ''):
     # initialize virtual display, settings, and crawler
     started = time()
     window_size = (1920, 1080)
@@ -34,6 +34,12 @@ def script(state_code: str, subject: str):
             if state == state_code:
                 cities.append(city)
         cities = sorted(list(set(cities)))
+        if start_city:
+            try:
+                cities = cities[cities.index(start_city):]
+            except ValueError:
+                logging.error(f"{start_city} does not exist in {state_code}")
+                return
 
     # search each city of the state for the subject
     for city in cities:
@@ -78,6 +84,8 @@ if __name__ == '__main__':
                         help='the subject you want to search')
     parser.add_argument('state_code', type=str,
                         help='the two letter state abbreviation for where you want to search the subject')
+    parser.add_argument('-c', '--city', type=str,
+                        help='the city you want to begin the search at (cities are searched alphabetically)')
     args = parser.parse_args()
     subject = args.subject.strip()
     state_code = args.state_code.strip().upper()
@@ -90,4 +98,12 @@ if __name__ == '__main__':
     elif not isinstance(subject, str):
         logging.error('Subject is invalid. Must be a string.')
     else:
-        script(subject=args.subject, state_code=args.state_code)
+        if args.city:
+            city = args.city.strip()
+            logging.info(city)
+            if not isinstance(city, str):
+                logging.error('City is invalid. Must be a string.')
+            else:
+                script(subject=subject, state_code=state_code, start_city=city)
+        else:
+            script(subject=subject, state_code=state_code)

@@ -1,27 +1,26 @@
-# BEAT
+# **BEAT**
 
 Home to the **B**usiness **E**xtraction through **A**utomation **T**ool.
 
 - Using Selenium and pyvirtualdisplay, BEAT:
   - crawls G Maps
   - collects business info based on city, state, subject searched
-  - does so headless using XVFB
+  - does so headless using XVFB (X Virtual Frame Buffer)
 - Stores business information from each city in a CSV
 - Runs in a Docker container for portability and dependency management
 
-## Docker
+## **Docker**
 
-### Build
+### **Build**
 
     cd /BEAT/
 
-    docker build -t BEAT:latest .
+    docker build -t <image>:<tag> .
 
+### **Run**
 
-### Run
-
-    docker run --rm \
-               --shm-size=2g \
-               -v $PWD/results:/results/ \
-               --name BEAT_container \
-               beat:latest 'subject' 'state_code'
+    $ docker run --rm \
+                 --shm-size=2g \
+                 -v $(pwd)/results:/results/ \
+                 --name <container name> \
+                 <image>:<tag> <subject> <state> [--city <city> | -c <city>]
