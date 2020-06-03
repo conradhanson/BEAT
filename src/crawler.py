@@ -157,6 +157,15 @@ class Crawler:
         else:
             return False
 
+    def no_results(self):
+        """ Determine if no results were found. """
+        no_results = None
+        try:
+            no_results = self.browser.find_element_by_css_selector(self.css_selectors["NO RESULTS"])
+        except NoSuchElementException:
+            pass
+        return bool(no_results)
+
     def get_name(self):
         """ grab a business's name """
         name = None

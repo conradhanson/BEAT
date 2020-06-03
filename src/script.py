@@ -51,9 +51,13 @@ def script(state_code: str, subject: str, start_city: str = ''):
             businesses = crawler.search_subject(city, state_code, subject, page_limit=25, sleep_time=max_timeout)
         except (StaleElementReferenceException, WebDriverException):
             crawler.browser.save_screenshot(path_save_errors + f"{city}, {state_code} failure.png")
-            logging.error(f'failed crawling {city}. stale element error. '
-                          f'Precautionary sleep for {max_timeout / 3600} hrs.')
-            sleep(max_timeout)
+            if crawler.no_results():
+                logging.info(f'No results found in {city}')
+                continue
+            else:
+                logging.error(f'failed crawling {city}. stale element error. '
+                              f'Precautionary sleep for {max_timeout / 3600} hrs.')
+                sleep(max_timeout)
 
         if businesses:
             logging.info(f'Found {len(businesses)} contacts')

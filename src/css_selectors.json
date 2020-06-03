@@ -4,6 +4,7 @@
     "CLEAR SEARCH": "html body.keynav-mode-off.screen-mode jsl div#app-container.vasquette.pane-open-mode div#content-container div#omnibox-container.not-in-planetary div#omnibox.vasquette-margin-enabled.noprint div#omnibox-singlebox div.omnibox-singlebox-root.omnibox-active div#searchbox.searchbox.searchbox-shadow.noprint.clear-button-shown a.gsst_a",
     "SCROLLABLE RESULTS SECTION": "html body.keynav-mode-off.screen-mode jsl div#app-container.vasquette.pane-open-mode div#content-container div#pane div.widget-pane.widget-pane-visible div.widget-pane-content.scrollable-y div.widget-pane-content-holder div.section-layout.section-layout-root div.section-layout.section-scrollbox.scrollable-y.scrollable-show.section-layout-flex-vertical",
     "RESULTS": "div.section-result",
+    "NO RESULTS": ".section-no-result-title",
     "NEXT RESULTS PAGE": ".n7lv7yjyC35__button-next-icon",
     "BACK TO RESULTS": ".section-back-to-list-button > span:nth-child(1)",
     "BUSINESS IMAGE": ".section-hero-header-image-hero > img:nth-child(1)",
