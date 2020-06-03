@@ -2,12 +2,12 @@
 
 Home to the **B**usiness **E**xtraction through **A**utomation **T**ool.
 
-- Using Selenium and pyvirtualdisplay, BEAT:
+- Using *Selenium* and *pyvirtualdisplay*, BEAT:
   - crawls G Maps
   - collects business info based on city, state, subject searched
-  - does so headless using XVFB (X Virtual Frame Buffer)
+  - does so headless using *XVFB* (X Virtual Frame Buffer)
 - Stores business information from each city in a CSV
-- Runs in a Docker container for portability and dependency management
+- Runs in a *Docker* container for portability and dependency management
 
 ## **Docker**
 
