@@ -57,6 +57,7 @@ def script(state_code: str, subject: str, start_city: str = ''):
             else:
                 logging.error(f'failed crawling {city}. stale element error. '
                               f'Precautionary sleep for {max_timeout / 3600} hrs.')
+                crawler.page_count = 0
                 sleep(max_timeout)
 
         if businesses:
