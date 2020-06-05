@@ -17,7 +17,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 # MODULE
 import browser
 from definitions import default_timeout
-from definitions import max_timeout
 from definitions import path_css_selectors
 from definitions import path_save_errors
 
@@ -126,8 +125,7 @@ class Crawler:
 
         # ATTEMPT TO CLICK ELEMENT COUNT TIMES, COMPARING BEFORE AND AFTER URLs TO DETERMINE IF SUCCESSFUL
         for i in range(0, count):
-            clickable = self.can_click(key)
-            if clickable:
+            if self.can_click(key):
                 try:
                     element.click()
                 except (ElementClickInterceptedException, ElementNotInteractableException):
@@ -174,7 +172,6 @@ class Crawler:
             name_list = self.browser.find_element_by_css_selector(self.css_selectors['NAME']) \
                 .get_property('innerText').split('-')
         except NoSuchElementException:
-            # logging.error("get_name failed to find element", exc_info=False)
             pass
         else:
             if len(name_list) >= 2:
@@ -184,7 +181,6 @@ class Crawler:
                     name = i.strip()
                 else:
                     name = name + ' - ' + i.strip()
-                    # name.encode('utf8')
 
         return name
 
@@ -194,7 +190,6 @@ class Crawler:
         try:
             url = self.browser.find_element_by_css_selector(self.css_selectors["NEW URL"]).get_property('innerText')
         except NoSuchElementException:
-            # logging.error("get_url failed to find element", exc_info=False)
             pass
         else:
             url = url.strip()
@@ -207,7 +202,6 @@ class Crawler:
             phone = self.browser.find_element_by_css_selector(self.css_selectors["NEW PHONE #"]) \
                 .get_property('innerText')
         except NoSuchElementException:
-            # logging.error("get_phone failed to find element", exc_info=False)
             pass
         else:
             phone = re.search(r"^\(\d\d\d\) \d\d\d-\d\d\d\d", phone)
@@ -263,26 +257,12 @@ class Crawler:
             try:
                 biz = businesses.pop(i)
             except IndexError:
-                # logging.error(f'Failed to pop the {i}-th index of business list')
                 break
 
             if not biz.is_displayed():
                 biz.location_once_scrolled_into_view
 
             if self.is_ad(biz):
-                continue
-
-            # TODO this waiting for biz to be enabled doesn't work. biz is enabled but not clickable. check for clickable state instead.
-            biz_enabled = biz.is_enabled()
-            retry_count = 0
-            while not biz_enabled:
-                retry_count += 1
-                if retry_count > 3:
-                    break
-                logging.info(f'{retry_count}-th time waiting for biz to be enabled.')
-                biz_enabled = biz.is_enabled()
-
-            if not biz_enabled:
                 continue
 
             try:  # TO CLICK THE BUSINESS LISTING
@@ -313,7 +293,6 @@ class Crawler:
             if name and url:
                 biz_data.append((name, url, city, state_code))
 
-            # TODO maybe wrap in function?
             # GO BACK TO THE RESULTS PAGE
             successful_go_back = self.go_back_to_results(count=10)
             retry_count = 0
@@ -350,8 +329,7 @@ class Crawler:
             businesses = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
         return biz_data
 
-    def search_subject(self, city: str, state_code: str, subject: str,
-                       page_limit: int = 25, sleep_time: int = max_timeout):
+    def search_subject(self, city: str, state_code: str, subject: str):
         """
         Search maps for 'subject' in 'city', 'state_code'.
         Save results to table.
@@ -363,10 +341,6 @@ class Crawler:
                 to search in
             subject: str
                 to search for
-            page_limit: int
-                of results processed before sleeping. Default is 25 pages of results.
-            sleep_time: int
-                in seconds till continuing the results processing.
 
         Returns: boolean
             if successful

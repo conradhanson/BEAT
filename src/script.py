@@ -45,7 +45,7 @@ def script(state_code: str, subject: str, start_city: str = ''):
         logging.info(f'Searching {city}, {state_code}')
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
 
-        businesses = crawler.search_subject(city, state_code, subject, page_limit=25, sleep_time=max_timeout)
+        businesses = crawler.search_subject(city, state_code, subject)
 
         if businesses:
             logging.info(f'Found {len(businesses)} contacts')
