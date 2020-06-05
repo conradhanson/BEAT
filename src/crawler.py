@@ -6,7 +6,9 @@ from time import sleep
 from selenium.common.exceptions import ElementClickInterceptedException
 from selenium.common.exceptions import ElementNotInteractableException
 from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions
@@ -14,10 +16,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # MODULE
 import browser
-from definitions import path_css_selectors
-from definitions import path_save_errors
 from definitions import default_timeout
 from definitions import max_timeout
+from definitions import path_css_selectors
+from definitions import path_save_errors
 
 
 class Crawler:
@@ -28,7 +30,6 @@ class Crawler:
 
         self.browser = browser.get_firefox(width=width, height=height)
         # self.browser = browser.get_chrome(width=width, height=height)
-        self.page_count = 0  # keep track of number pages that have been processed
 
     def quit(self):
         if self.browser:
@@ -170,7 +171,7 @@ class Crawler:
         """ grab a business's name """
         name = None
         try:
-            name_list = self.browser.find_element_by_css_selector(self.css_selectors['NAME'])\
+            name_list = self.browser.find_element_by_css_selector(self.css_selectors['NAME']) \
                 .get_property('innerText').split('-')
         except NoSuchElementException:
             # logging.error("get_name failed to find element", exc_info=False)
@@ -203,7 +204,7 @@ class Crawler:
         """ grab a business's phone number if it exists """
         phone = None
         try:
-            phone = self.browser.find_element_by_css_selector(self.css_selectors["NEW PHONE #"])\
+            phone = self.browser.find_element_by_css_selector(self.css_selectors["NEW PHONE #"]) \
                 .get_property('innerText')
         except NoSuchElementException:
             # logging.error("get_phone failed to find element", exc_info=False)
@@ -383,16 +384,24 @@ class Crawler:
             results = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
 
             while results:
-                self.page_count += 1
-                # logging.info(f'{len(results)} businesses to iterate over')
-                businesses += self.iterate_businesses(city=city, state_code=state_code, businesses=results)
+                try:
+                    businesses += self.iterate_businesses(city=city, state_code=state_code, businesses=results)
+                except (StaleElementReferenceException, WebDriverException):
+                    self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate biz failure.png")
+                    if self.no_results():
+                        logging.info(f'No results found in {city}')
+                    else:
+                        logging.error(f'stale element error in {city}')
+                    break
 
-                if self.page_count >= page_limit:
-                    logging.info(f"sleeping for {max_timeout / 3600} hrs")
-                    sleep(sleep_time)  # SLEEP FOR X HRS AFTER COLLECTING X PAGES OF RESULTS
-                    self.page_count = 0
+                try:
+                    went_to_next_page = self.next_page('NEXT RESULTS PAGE')
+                except (StaleElementReferenceException, WebDriverException):
+                    self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} next page failure.png")
+                    logging.error(f'stale element error in {city}')
+                    break
 
-                if self.next_page('NEXT RESULTS PAGE'):
+                if went_to_next_page:
                     if self.wait_for('RESULTS'):
                         results = self.browser.find_elements_by_css_selector(self.css_selectors['RESULTS'])
                         sleep(3)

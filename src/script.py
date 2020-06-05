@@ -2,18 +2,15 @@
 import argparse
 import csv
 import logging
-from time import time
 from time import sleep
+from time import time
 
 from pyvirtualdisplay import Display
 
 from crawler import Crawler
-from definitions import ROOT_SAVE_DIR, path_save_errors, max_timeout
+from definitions import ROOT_SAVE_DIR, max_timeout
 from definitions import path_cities
 from definitions import path_log
-
-from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import WebDriverException
 
 
 def script(state_code: str, subject: str, start_city: str = ''):
@@ -42,29 +39,25 @@ def script(state_code: str, subject: str, start_city: str = ''):
                 return
 
     # search each city of the state for the subject
+    city_count = 0
     for city in cities:
+        city_count += 1
         logging.info(f'Searching {city}, {state_code}')
         path_save_file = ROOT_SAVE_DIR + f'/{city}_{state_code}_{subject}.csv'
-        businesses = []
 
-        try:
-            businesses = crawler.search_subject(city, state_code, subject, page_limit=25, sleep_time=max_timeout)
-        except (StaleElementReferenceException, WebDriverException):
-            crawler.browser.save_screenshot(path_save_errors + f"{city}, {state_code} failure.png")
-            if crawler.no_results():
-                logging.info(f'No results found in {city}')
-                continue
-            else:
-                logging.error(f'failed crawling {city}. stale element error. '
-                              f'Precautionary sleep for {max_timeout / 3600} hrs.')
-                crawler.page_count = 0
-                sleep(max_timeout)
+        businesses = crawler.search_subject(city, state_code, subject, page_limit=25, sleep_time=max_timeout)
 
         if businesses:
             logging.info(f'Found {len(businesses)} contacts')
             with open(path_save_file, 'a', encoding='utf-8') as f:
                 wr = csv.writer(f)
                 wr.writerows(businesses)
+
+        # AFTER SEARCHING # CITIES SLEEP FOR MAX TIMEOUT
+        if city_count >= 3:
+            city_count = 0
+            logging.info(f"sleeping for {max_timeout / 3600} hrs")
+            sleep(max_timeout)
 
     # cleanup
     crawler.quit()
