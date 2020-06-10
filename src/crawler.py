@@ -279,10 +279,10 @@ class Crawler:
                 retry_count += 1
                 if retry_count > 3:
                     break
-                logging.info(f'{retry_count}-th time waiting for BUSINESS IMAGE to load')
                 img_loaded = self.wait_for('BUSINESS IMAGE')
 
             if not img_loaded:
+                logging.error(f'Business Image never loaded')
                 continue
 
             # COLLECT BUSINESS INFO & ADD TO RELEVANT RESULTS
@@ -300,7 +300,6 @@ class Crawler:
                 retry_count += 1
                 if retry_count > 3:
                     break
-                logging.info(f'{retry_count}-th time trying to go back to results')
                 successful_go_back = self.go_back_to_results(count=10)
 
             if successful_go_back:
@@ -311,11 +310,10 @@ class Crawler:
                     retry_count += 1
                     if retry_count > 3:
                         break
-                    logging.info(f'{retry_count}-th time waiting for results to load')
                     results_loaded = self.wait_for('RESULTS')
 
                 if not results_loaded:
-                    logging.error('RESULTS loading timeout')
+                    logging.error('Results loading timeout')
                     self.browser.save_screenshot(path_save_errors +
                                                  f"{city}, {state_code} iterate_businesses RELOAD RESULTS timeout.png")
                     break
@@ -360,19 +358,23 @@ class Crawler:
             while results:
                 try:
                     businesses += self.iterate_businesses(city=city, state_code=state_code, businesses=results)
-                except (StaleElementReferenceException, WebDriverException):
+                except StaleElementReferenceException:
                     self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} iterate biz failure.png")
                     if self.no_results():
                         logging.info(f'No results found in {city}')
                     else:
                         logging.error(f'stale element error in {city}')
                     break
+                except WebDriverException:
+                    break
 
                 try:
                     went_to_next_page = self.next_page('NEXT RESULTS PAGE')
-                except (StaleElementReferenceException, WebDriverException):
+                except StaleElementReferenceException:
                     self.browser.save_screenshot(path_save_errors + f"{city}, {state_code} next page failure.png")
                     logging.error(f'stale element error in {city}')
+                    break
+                except WebDriverException:
                     break
 
                 if went_to_next_page:
