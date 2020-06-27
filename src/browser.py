@@ -1,7 +1,9 @@
 from copy import copy
 from pathlib import Path
+import logging
 
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException, NoSuchWindowException
 from selenium.webdriver import DesiredCapabilities
 
 from definitions import ROOT_SAVE_DIR
@@ -13,7 +15,38 @@ from definitions import path_log_firefox
 from definitions import path_save_errors
 
 
-def get_chrome(width=2560, height=1600, headless=True):
+class Browser(webdriver.Firefox):
+    def __init__(self, width=2560, height=1600):
+        cap = DesiredCapabilities.FIREFOX.copy()
+        super(Browser, self).__init__(capabilities=cap,
+                                      firefox_binary=path_firefox_binary,
+                                      executable_path=path_driver_firefox,
+                                      service_log_path=path_log_firefox)
+
+        self.set_window_size(width, height)
+        self.implicitly_wait(30)
+
+    def get(self, url: str):
+        """
+        Wrapper for selenuium.webdriver.get to handle WebDriverException
+        when "Failed to decode response from marionette"
+        """
+        try:
+            super(Browser, self).get(url)
+        except (WebDriverException, NoSuchWindowException) as e:
+            if 'Message: Failed to decode response from marionette' in str(e) or \
+               'Message: Browsing context has been discarded' in str(e):
+                self.reset()
+                logging.info('Marionette exception encountered. Resetting browser object.')
+                self.get(url)
+            else:
+                logging.error(str(e))
+
+    def reset(self):
+        self.__init__()
+
+
+def _get_chrome(width=2560, height=1600, headless=True):
     """
     Define Chrome-specific options and return Chrome WebDriver instance
 
@@ -27,7 +60,7 @@ def get_chrome(width=2560, height=1600, headless=True):
     Returns: WebDriver
         Chrome browser
     """
-    init_chrome_log()
+    _init_chrome_log()
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("start-maximized")  # OPEN BROWSER IN MAXIMIZED MODE
     chrome_options.add_argument("disable-infobars")  # DISABLING INFO BARS
@@ -46,7 +79,7 @@ def get_chrome(width=2560, height=1600, headless=True):
     return browser
 
 
-def get_firefox(width=2560, height=1600):
+def _get_firefox(width=2560, height=1600):
     """
     Define Firefox-specific options and return Firefox WebDriver instance
 
@@ -59,7 +92,7 @@ def get_firefox(width=2560, height=1600):
     Returns: WebDriver
         Firefox browser
     """
-    init_firefox_log()
+    _init_firefox_log()
     cap = copy(DesiredCapabilities).FIREFOX
 
     browser = webdriver.Firefox(capabilities=cap,
@@ -72,7 +105,7 @@ def get_firefox(width=2560, height=1600):
     return browser
 
 
-def init_firefox_log():
+def _init_firefox_log():
     # Make results and errors Dir
     if not Path(ROOT_SAVE_DIR).exists():
         Path(ROOT_SAVE_DIR).mkdir()
@@ -86,7 +119,7 @@ def init_firefox_log():
             f.write('\n')
 
 
-def init_chrome_log():
+def _init_chrome_log():
     # Make results and errors Dir
     if not Path(ROOT_SAVE_DIR).exists():
         Path(ROOT_SAVE_DIR).mkdir()

@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
 # MODULE
-import browser
+from browser import Browser
 from definitions import default_timeout
 from definitions import path_css_selectors
 from definitions import path_save_errors
@@ -27,7 +27,7 @@ class Crawler:
         with open(path_css_selectors, 'r') as f:
             self.css_selectors = json.load(f)
 
-        self.browser = browser.get_firefox(width=width, height=height)
+        self.browser = Browser(width=width, height=height)
         # self.browser = browser.get_chrome(width=width, height=height)
 
     def quit(self):
