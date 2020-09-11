@@ -131,3 +131,4 @@ dmypy.json
 .idea
 /results
 .vscode/settings.json
+src/test_script.py
